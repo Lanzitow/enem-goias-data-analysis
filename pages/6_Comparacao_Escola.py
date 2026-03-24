@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 st.title("🏫 Comparação por Tipo de Escola")
 
 # carregar base
-df = pd.read_csv("dados/tratado/enem_escola.csv")
+df = pd.read_csv("dados/tratado/enem_escola_sample.csv")
 
 disciplinas = [
     "Linguagens",
