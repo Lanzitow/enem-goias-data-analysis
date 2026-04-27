@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.title("🏫 Comparação por Tipo de Escola")
 
 # carregar base
 df = pd.read_csv("dados/tratado/enem_escola_sample.csv")
+
+# 🔥 NOVO: GO vs BR juntos
+df["Local"] = df["SG_UF_PROVA"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
 
 disciplinas = [
     "Linguagens",
@@ -21,43 +24,45 @@ with col1:
     disciplina = st.selectbox("Disciplina", disciplinas)
 
 with col2:
-    grupo = st.selectbox("Grupo", ["Brasil", "Goiás"])
+    st.write("Comparação: Goiás vs Brasil")
 
-# filtro
-if grupo == "Goiás":
-    df = df[df["SG_UF_PROVA"] == "GO"]
-
-# média por escola
-media = df.groupby("Tipo_Escola")[disciplina].mean().sort_values(ascending=False)
+# 🔥 média por escola + local
+media = df.groupby(["Local", "Tipo_Escola"])[disciplina].mean().reset_index()
 
 st.subheader("📊 Médias por tipo de escola")
-st.dataframe(media.round(2).reset_index())
 
-# gráfico
-fig, ax = plt.subplots(figsize=(8,5))
-media.plot(kind="bar", ax=ax)
-ax.set_title(f"Média das notas — {disciplina} ({grupo})")
-ax.set_ylabel("Nota média")
-ax.set_xlabel("Tipo de escola")
+st.dataframe(media.round(2), use_container_width=True)
 
-st.pyplot(fig)
+# 🔥 gráfico interativo
+fig = px.bar(
+    media,
+    x="Tipo_Escola",
+    y=disciplina,
+    color="Tipo_Escola",
+    facet_col="Local",
+    title=f"Média das notas — {disciplina} (GO vs Brasil)"
+)
 
-# interpretação automática
-melhor = media.idxmax()
-pior = media.idxmin()
+st.plotly_chart(fig, use_container_width=True)
+
+# 🔥 interpretação (usando GO como referência principal)
+media_go = media[media["Local"] == "Goiás"].set_index("Tipo_Escola")[disciplina]
+
+melhor = media_go.idxmax()
+pior = media_go.idxmin()
 
 st.markdown("### 📌 Interpretação")
 
 st.write(
-    f"No grupo **{grupo}**, a maior média em **{disciplina}** foi observada nas escolas "
+    f"Em **Goiás**, a maior média em **{disciplina}** foi observada nas escolas "
     f"**{melhor}**, enquanto a menor média ocorreu nas escolas **{pior}**."
 )
 
-# insight mais forte (professor gosta disso)
-if "Privada" in media.index and "Estadual" in media.index:
-    diff = media["Privada"] - media["Estadual"]
+# insight mais forte
+if "Privada" in media_go.index and "Estadual" in media_go.index:
+    diff = media_go["Privada"] - media_go["Estadual"]
     st.write(
-        f"A diferença entre escolas privadas e estaduais é de aproximadamente "
+        f"A diferença entre escolas privadas e estaduais em Goiás é de aproximadamente "
         f"{diff:.2f} pontos, evidenciando desigualdade no desempenho."
     )
 
