@@ -1,10 +1,13 @@
 import streamlit as st
-import matplotlib.pyplot as plt
+import plotly.express as px
 from utils.load_data import carregar_microdados
 
 st.title("📊 Distribuição das Notas")
 
 df = carregar_microdados()
+
+# 🔥 NOVO: coluna GO vs BR
+df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
 
 disciplinas = [
     "Linguagens",
@@ -16,35 +19,38 @@ disciplinas = [
 
 disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 
-col1, col2 = st.columns(2)
-
-with col1:
-    dados_go = df[df["UF"] == "GO"][disciplina].dropna()
-
-with col2:
-    dados_br = df[disciplina].dropna()
+# 🔥 não separar mais manualmente
+dados_go = df[df["Local"] == "Goiás"][disciplina].dropna()
+dados_br = df[df["Local"] == "Brasil"][disciplina].dropna()
 
 st.subheader(f"Histograma — {disciplina}")
 
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.hist(dados_br, bins=30, alpha=0.6, label="Brasil")
-ax.hist(dados_go, bins=30, alpha=0.6, label="Goiás")
-ax.set_title(f"Distribuição das notas de {disciplina}")
-ax.set_xlabel("Nota")
-ax.set_ylabel("Frequência")
-ax.legend()
+# 🔥 gráfico interativo
+fig = px.histogram(
+    df,
+    x=disciplina,
+    color="Local",
+    barmode="overlay",
+    nbins=30,
+    title=f"Distribuição das notas de {disciplina}"
+)
 
-st.pyplot(fig)
+st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("Boxplot comparativo")
 
-fig2, ax2 = plt.subplots(figsize=(8, 5))
-ax2.boxplot([dados_go, dados_br], labels=["Goiás", "Brasil"])
-ax2.set_title(f"Boxplot — {disciplina}")
-ax2.set_ylabel("Nota")
+# 🔥 boxplot interativo
+fig2 = px.box(
+    df,
+    x="Local",
+    y=disciplina,
+    color="Local",
+    title=f"Boxplot — {disciplina}"
+)
 
-st.pyplot(fig2)
+st.plotly_chart(fig2, use_container_width=True)
 
+# métricas continuam iguais
 media_go = dados_go.mean()
 media_br = dados_br.mean()
 mediana_go = dados_go.median()
@@ -68,6 +74,6 @@ st.write(
 )
 
 st.write(
-    "O histograma permite observar a concentração das notas, enquanto o boxplot ajuda a visualizar "
-    "dispersão, amplitude e possíveis diferenças na distribuição entre Goiás e Brasil."
+    "O histograma interativo permite observar a distribuição das notas, enquanto o boxplot "
+    "mostra a dispersão e possíveis diferenças entre Goiás e o Brasil."
 )

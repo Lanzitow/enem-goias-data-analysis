@@ -6,6 +6,9 @@ st.title("❓ Questões de Pesquisa")
 
 df = carregar_microdados()
 
+# 🔥 NOVO PADRÃO
+df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
+
 disciplinas = [
     "Linguagens",
     "Matemática",
@@ -14,10 +17,11 @@ disciplinas = [
     "Redação"
 ]
 
-df_go = df[df["UF"] == "GO"]
+df_go = df[df["Local"] == "Goiás"]
+df_br = df[df["Local"] == "Brasil"]
 
 # -------------------------------
-# FUNÇÕES OTIMIZADAS COM CACHE
+# FUNÇÕES COM CACHE
 # -------------------------------
 
 @st.cache_data
@@ -41,11 +45,11 @@ def calcular_zeros(df_base):
     return (df_base[disciplinas] == 0).mean() * 100
 
 @st.cache_data
-def comparar_go_br(df, df_go):
+def comparar_go_br(df_go, df_br):
     resultados = []
     for d in disciplinas:
         media_go = df_go[d].mean()
-        media_br = df[d].mean()
+        media_br = df_br[d].mean()
         diff = media_go - media_br
         diff_pct = (diff / media_br) * 100
 
@@ -59,28 +63,28 @@ def comparar_go_br(df, df_go):
     return pd.DataFrame(resultados)
 
 # -------------------------------
-# PRÉ-CÁLCULO (executa 1 vez só)
+# PRÉ-CÁLCULO
 # -------------------------------
 
 medias_go = calcular_medias(df_go)
-medias_br = calcular_medias(df)
+medias_br = calcular_medias(df_br)
 
 mediana_go = calcular_mediana(df_go)
-mediana_br = calcular_mediana(df)
+mediana_br = calcular_mediana(df_br)
 
 desvio_go = calcular_desvio(df_go)
-desvio_br = calcular_desvio(df)
+desvio_br = calcular_desvio(df_br)
 
 diff_go = calcular_media_mediana_diff(df_go)
-diff_br = calcular_media_mediana_diff(df)
+diff_br = calcular_media_mediana_diff(df_br)
 
 zeros_go = calcular_zeros(df_go)
-zeros_br = calcular_zeros(df)
+zeros_br = calcular_zeros(df_br)
 
-comp = comparar_go_br(df, df_go)
+comp = comparar_go_br(df_go, df_br)
 
 # -------------------------------
-# QUESTÕES (com expander → mais leve)
+# QUESTÕES
 # -------------------------------
 
 with st.expander("Questão 1 — Média em Goiás"):

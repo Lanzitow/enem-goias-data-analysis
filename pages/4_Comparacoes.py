@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 from utils.load_data import carregar_microdados
 
 st.title("📊 Comparações: Goiás vs Brasil")
 
 df = carregar_microdados()
+
+# 🔥 NOVO
+df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
 
 disciplinas = [
     "Linguagens",
@@ -15,9 +18,9 @@ disciplinas = [
     "Redação"
 ]
 
-# Separando bases
-df_go = df[df["UF"] == "GO"].copy()
-df_br = df.copy()
+# Mantive sua lógica
+df_go = df[df["Local"] == "Goiás"].copy()
+df_br = df[df["Local"] == "Brasil"].copy()
 
 # Montando tabela comparativa
 resultados = []
@@ -77,11 +80,15 @@ c1.metric("Média Goiás", f'{linha["Média_GO"]:.2f}')
 c2.metric("Média Brasil", f'{linha["Média_BR"]:.2f}')
 c3.metric("Diferença", f'{linha["Diferença"]:.2f}', f'{linha["Diferença_%"]:.2f}%')
 
-fig, ax = plt.subplots(figsize=(7, 4))
-ax.bar(["Goiás", "Brasil"], [linha["Média_GO"], linha["Média_BR"]])
-ax.set_title(f"Comparação das médias - {disciplina_escolhida}")
-ax.set_ylabel("Nota média")
-st.pyplot(fig)
+# 🔥 GRÁFICO INTERATIVO
+fig = px.bar(
+    x=["Goiás", "Brasil"],
+    y=[linha["Média_GO"], linha["Média_BR"]],
+    labels={"x": "Local", "y": "Nota média"},
+    title=f"Comparação das médias - {disciplina_escolhida}"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("### 📌 Interpretação automática")
 
@@ -99,20 +106,16 @@ else:
 st.markdown("---")
 st.subheader("Comparação geral entre todas as disciplinas")
 
-fig2, ax2 = plt.subplots(figsize=(10, 5))
-x = range(len(comparacao))
-largura = 0.35
+# 🔥 GRÁFICO INTERATIVO GERAL
+fig2 = px.bar(
+    comparacao,
+    x="Disciplina",
+    y=["Média_GO", "Média_BR"],
+    barmode="group",
+    title="Médias por disciplina: Goiás vs Brasil"
+)
 
-ax2.bar([i - largura/2 for i in x], comparacao["Média_GO"], width=largura, label="Goiás")
-ax2.bar([i + largura/2 for i in x], comparacao["Média_BR"], width=largura, label="Brasil")
-
-ax2.set_xticks(list(x))
-ax2.set_xticklabels(comparacao["Disciplina"], rotation=15)
-ax2.set_ylabel("Nota média")
-ax2.set_title("Médias por disciplina: Goiás vs Brasil")
-ax2.legend()
-
-st.pyplot(fig2)
+st.plotly_chart(fig2, use_container_width=True)
 
 st.markdown("### Ranking das disciplinas por diferença")
 

@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.title("📊 Qualidade dos Dados")
 
@@ -10,7 +10,7 @@ st.title("📊 Qualidade dos Dados")
 base_resultados_original = 4_332_944
 base_participantes_original = 4_332_944
 
-base_inicial_analise = 4_332_944   # após selecionar as 6 colunas usadas na análise
+base_inicial_analise = 4_332_944
 duplicados_removidos = 1_151_156
 base_apos_duplicados = 3_181_788
 base_final_limpa = 2_990_085
@@ -68,12 +68,15 @@ etapas = pd.DataFrame({
 
 st.dataframe(etapas, use_container_width=True)
 
-fig, ax = plt.subplots(figsize=(8, 4))
-ax.bar(etapas["Etapa"], etapas["Quantidade"])
-ax.set_title("Evolução da quantidade de registros")
-ax.set_ylabel("Quantidade")
-ax.tick_params(axis="x", rotation=15)
-st.pyplot(fig)
+# 🔥 GRÁFICO INTERATIVO
+fig = px.bar(
+    etapas,
+    x="Etapa",
+    y="Quantidade",
+    title="Evolução da quantidade de registros"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
 

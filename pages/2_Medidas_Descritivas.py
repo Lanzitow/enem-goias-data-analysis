@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 from utils.load_data import carregar_microdados
 
 st.set_page_config(page_title="Medidas Descritivas", layout="wide")
@@ -8,6 +8,9 @@ st.set_page_config(page_title="Medidas Descritivas", layout="wide")
 st.title("📐 Medidas Descritivas")
 
 df = carregar_microdados()
+
+# 🔥 NOVO: coluna GO vs BR
+df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
 
 disciplinas = [
     "Linguagens",
@@ -22,75 +25,69 @@ col1, col2 = st.columns(2)
 with col1:
     disciplina = st.selectbox("Escolha a disciplina", disciplinas)
 
+# ❌ removido seletor de grupo
 with col2:
-    grupo = st.selectbox("Grupo analisado", ["Brasil", "Goiás"])
+    st.write("Comparação: Goiás vs Brasil")
 
-if grupo == "Goiás":
-    dados = df[df["UF"] == "GO"][disciplina].dropna()
-else:
-    dados = df[disciplina].dropna()
+# 🔥 separar automaticamente
+dados_go = df[df["Local"] == "Goiás"][disciplina].dropna()
+dados_br = df[df["Local"] == "Brasil"][disciplina].dropna()
 
-media = dados.mean()
-mediana = dados.median()
-desvio = dados.std()
-minimo = dados.min()
-maximo = dados.max()
-q1 = dados.quantile(0.25)
-q3 = dados.quantile(0.75)
+# 🔥 métricas separadas
+media_go, media_br = dados_go.mean(), dados_br.mean()
+mediana_go, mediana_br = dados_go.median(), dados_br.median()
+desvio_go, desvio_br = dados_go.std(), dados_br.std()
 
-st.subheader(f"Resumo estatístico — {disciplina} ({grupo})")
+st.subheader(f"Resumo estatístico — {disciplina} (GO vs Brasil)")
 
 c1, c2, c3 = st.columns(3)
-c1.metric("Média", f"{media:.2f}")
-c2.metric("Mediana", f"{mediana:.2f}")
-c3.metric("Desvio padrão", f"{desvio:.2f}")
+c1.metric("Média (GO)", f"{media_go:.2f}")
+c2.metric("Média (BR)", f"{media_br:.2f}")
+c3.metric("Diferença", f"{(media_go - media_br):.2f}")
 
-c4, c5, c6, c7 = st.columns(4)
-c4.metric("Mínimo", f"{minimo:.2f}")
-c5.metric("Q1 (25%)", f"{q1:.2f}")
-c6.metric("Q3 (75%)", f"{q3:.2f}")
-c7.metric("Máximo", f"{maximo:.2f}")
+c4, c5, c6 = st.columns(3)
+c4.metric("Mediana (GO)", f"{mediana_go:.2f}")
+c5.metric("Mediana (BR)", f"{mediana_br:.2f}")
+c6.metric("Desvio (GO)", f"{desvio_go:.2f}")
 
+# 🔥 tabela comparativa
 resumo = pd.DataFrame({
-    "Medida": [
-        "Média",
-        "Mediana",
-        "Desvio padrão",
-        "Mínimo",
-        "1º quartil (Q1)",
-        "3º quartil (Q3)",
-        "Máximo"
-    ],
-    "Valor": [media, mediana, desvio, minimo, q1, q3, maximo]
+    "Medida": ["Média", "Mediana", "Desvio padrão"],
+    "Goiás": [media_go, mediana_go, desvio_go],
+    "Brasil": [media_br, mediana_br, desvio_br]
 })
 
 st.dataframe(resumo, use_container_width=True)
 
-st.markdown("### Histograma")
+st.markdown("### Histograma Interativo")
 
-fig, ax = plt.subplots(figsize=(9, 4))
-ax.hist(dados, bins=30)
-ax.set_title(f"Distribuição das notas — {disciplina} ({grupo})")
-ax.set_xlabel("Nota")
-ax.set_ylabel("Frequência")
-st.pyplot(fig)
+# 🔥 gráfico interativo
+fig = px.histogram(
+    df,
+    x=disciplina,
+    color="Local",
+    barmode="overlay",
+    nbins=30,
+    title=f"Distribuição das notas — {disciplina} (GO vs Brasil)"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("### 📌 Interpretação automática")
 
-if media > mediana:
+if media_go > media_br:
     st.write(
-        "A média está acima da mediana, sugerindo assimetria à direita. "
-        "Isso indica que algumas notas mais altas podem estar puxando a média para cima."
+        "A média em Goiás está acima da média do Brasil, indicando desempenho superior nesse grupo."
     )
-elif media < mediana:
+elif media_go < media_br:
     st.write(
-        "A média está abaixo da mediana, sugerindo assimetria à esquerda."
+        "A média em Goiás está abaixo da média do Brasil."
     )
 else:
     st.write(
-        "A média e a mediana são praticamente iguais, indicando uma distribuição mais equilibrada."
+        "As médias são semelhantes entre Goiás e Brasil."
     )
 
 st.write(
-    f"O desvio padrão de {desvio:.2f} mostra o nível de dispersão das notas em torno da média."
+    f"O desvio padrão em Goiás ({desvio_go:.2f}) e no Brasil ({desvio_br:.2f}) mostra o nível de dispersão das notas."
 )
