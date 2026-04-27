@@ -1,30 +1,45 @@
-# 📊 Análise de Dados – ENEM Goiás 2024
+# 📊 Análise de Dados – ENEM Goiás vs Brasil (2024)
 
-Projeto de análise exploratória e estatística dos microdados do ENEM 2024 com foco no estado de Goiás, comparando indicadores com o cenário nacional.
+Aplicação interativa para análise exploratória e estatística dos microdados do ENEM 2024, com foco comparativo entre o estado de Goiás e o cenário nacional.
 
 ---
 
 ## 🎯 Objetivo
 
-Analisar o desempenho dos participantes do ENEM 2024 em Goiás, identificando:
+Investigar o desempenho dos participantes do ENEM 2024, comparando Goiás com o Brasil, por meio de:
 
-- Distribuição de notas por área
-- Comparação entre Goiás e Brasil
-- Padrões estatísticos relevantes
-- Insights educacionais baseados em dados
+- Estatísticas descritivas das notas
+- Comparações entre grupos (Goiás vs Brasil)
+- Identificação de padrões e desigualdades
+- Análise de variáveis categóricas
+- Geração de insights educacionais baseados em dados
+
+---
+
+## 🚀 Aplicação
+
+O projeto foi desenvolvido como uma aplicação interativa utilizando **Streamlit**, permitindo:
+
+- Exploração dinâmica dos dados
+- Visualizações interativas
+- Comparações em tempo real
+- Interpretações automáticas dos resultados
 
 ---
 
 ## 🗂 Estrutura do Projeto
 enem-goias-data-analysis/
 │
-├── apresentacao/
+├── pages/ # Páginas da aplicação Streamlit
 ├── dados/
-│ ├── bruto/ (não versionado)
-│ └── tratado/
-├── notebooks/
-├── relatorio/
+│ ├── bruto/ # Dados originais (não versionados)
+│ └── tratado/ # Dados tratados (apenas amostras)
+├── notebooks/ # Análises exploratórias
+├── utils/ # Funções auxiliares (ex: carregamento de dados)
+├── relatorio/ # Materiais do projeto
+├── app.py # Aplicação principal
 └── README.md
+
 
 ---
 
@@ -33,31 +48,43 @@ enem-goias-data-analysis/
 - Python
 - Pandas
 - NumPy
+- Plotly (gráficos interativos)
 - Matplotlib
+- Streamlit
 - Jupyter Notebook
 
 ---
 
 ## 📈 Principais Análises
 
-- Estatísticas descritivas
-- Comparação de médias
-- Distribuição de notas
-- Visualizações gráficas
-- Análise comparativa Goiás vs Brasil
+- Estatísticas descritivas (média, mediana, desvio padrão)
+- Distribuição das notas por disciplina
+- Comparação entre Goiás e Brasil
+- Percentual de alunos acima da média
+- Análise de notas zeradas
+- Identificação de alunos em risco
+- Comparação por tipo de escola
+- 🔥 Análise de variáveis categóricas (ex: localização × faixa de desempenho)
 
 ---
 
 ## ⚠️ Sobre os Dados
 
-Os microdados brutos do ENEM não foram incluídos neste repositório devido ao tamanho elevado dos arquivos (>100MB).
+Os microdados completos do ENEM não foram incluídos neste repositório devido ao tamanho elevado dos arquivos.
 
-Os dados podem ser obtidos diretamente no site oficial do INEP.
+Para execução local, utilize os dados disponíveis em:
+
+- INEP (Instituto Nacional de Estudos e Pesquisas Educacionais)
+
+O projeto utiliza **amostras tratadas** para garantir funcionamento no ambiente de deploy.
 
 ---
 
-## 📌 Autor
+## 👨‍💻 Autores
 
-Alan Demetrio  
-Projeto acadêmico – CESAR School  
+- Alan Demetrio  
+- Marcus Vinicius  
+- Gustavo Gonçalves  
+
+Projeto acadêmico – Prof.Dr.Cesar Candido Xavier 
 Ano: 2026
