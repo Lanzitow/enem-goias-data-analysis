@@ -9,8 +9,10 @@ st.title("📐 Medidas Descritivas")
 
 df = carregar_microdados()
 
-# 🔥 NOVO: coluna GO vs BR
-df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
+# classificação GO vs BR
+df["Local"] = df["UF"].apply(
+    lambda x: "Goiás" if x == "GO" else "Brasil"
+)
 
 disciplinas = [
     "Linguagens",
@@ -20,74 +22,130 @@ disciplinas = [
     "Redação"
 ]
 
+# -----------------------------
+# FILTROS
+# -----------------------------
 col1, col2 = st.columns(2)
 
 with col1:
-    disciplina = st.selectbox("Escolha a disciplina", disciplinas)
+    disciplina = st.selectbox(
+        "Escolha a disciplina",
+        disciplinas
+    )
 
-# ❌ removido seletor de grupo
 with col2:
     st.write("Comparação: Goiás vs Brasil")
 
-# 🔥 separar automaticamente
-dados_go = df[df["Local"] == "Goiás"][disciplina].dropna()
-dados_br = df[df["Local"] == "Brasil"][disciplina].dropna()
+# -----------------------------
+# DADOS
+# -----------------------------
+dados_go = df[df["Local"] == "Goiás"][disciplina]
+dados_br = df[df["Local"] == "Brasil"][disciplina]
 
-# 🔥 métricas separadas
-media_go, media_br = dados_go.mean(), dados_br.mean()
-mediana_go, mediana_br = dados_go.median(), dados_br.median()
-desvio_go, desvio_br = dados_go.std(), dados_br.std()
+# -----------------------------
+# MEDIDAS
+# -----------------------------
+media_go = dados_go.mean()
+media_br = dados_br.mean()
 
-st.subheader(f"Resumo estatístico — {disciplina} (GO vs Brasil)")
+mediana_go = dados_go.median()
+mediana_br = dados_br.median()
+
+desvio_go = dados_go.std()
+desvio_br = dados_br.std()
+
+# -----------------------------
+# MÉTRICAS
+# -----------------------------
+st.subheader(f"Resumo estatístico — {disciplina}")
 
 c1, c2, c3 = st.columns(3)
+
 c1.metric("Média (GO)", f"{media_go:.2f}")
 c2.metric("Média (BR)", f"{media_br:.2f}")
 c3.metric("Diferença", f"{(media_go - media_br):.2f}")
 
 c4, c5, c6 = st.columns(3)
+
 c4.metric("Mediana (GO)", f"{mediana_go:.2f}")
 c5.metric("Mediana (BR)", f"{mediana_br:.2f}")
-c6.metric("Desvio (GO)", f"{desvio_go:.2f}")
+c6.metric("Desvio padrão (GO)", f"{desvio_go:.2f}")
 
-# 🔥 tabela comparativa
+# -----------------------------
+# TABELA
+# -----------------------------
 resumo = pd.DataFrame({
-    "Medida": ["Média", "Mediana", "Desvio padrão"],
-    "Goiás": [media_go, mediana_go, desvio_go],
-    "Brasil": [media_br, mediana_br, desvio_br]
+    "Medida": [
+        "Média",
+        "Mediana",
+        "Desvio padrão"
+    ],
+    "Goiás": [
+        round(media_go, 2),
+        round(mediana_go, 2),
+        round(desvio_go, 2)
+    ],
+    "Brasil": [
+        round(media_br, 2),
+        round(mediana_br, 2),
+        round(desvio_br, 2)
+    ]
 })
 
 st.dataframe(resumo, use_container_width=True)
 
-st.markdown("### Histograma Interativo")
+# -----------------------------
+# HISTOGRAMA
+# -----------------------------
+st.markdown("### 📊 Distribuição das notas")
 
-# 🔥 gráfico interativo
 fig = px.histogram(
     df,
     x=disciplina,
     color="Local",
+    histnorm="percent",
     barmode="overlay",
     nbins=30,
-    title=f"Distribuição das notas — {disciplina} (GO vs Brasil)"
+    opacity=0.6,
+    title=f"Distribuição percentual das notas — {disciplina}"
+)
+
+fig.update_layout(
+    yaxis_title="Percentual (%)",
+    xaxis_title="Nota"
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
+# -----------------------------
+# INTERPRETAÇÃO
+# -----------------------------
 st.markdown("### 📌 Interpretação automática")
 
 if media_go > media_br:
     st.write(
-        "A média em Goiás está acima da média do Brasil, indicando desempenho superior nesse grupo."
+        f"A média de Goiás ({media_go:.2f}) está acima da média nacional "
+        f"({media_br:.2f}), indicando desempenho superior nessa disciplina."
     )
+
 elif media_go < media_br:
     st.write(
-        "A média em Goiás está abaixo da média do Brasil."
+        f"A média de Goiás ({media_go:.2f}) está abaixo da média nacional "
+        f"({media_br:.2f})."
     )
+
 else:
     st.write(
-        "As médias são semelhantes entre Goiás e Brasil."
+        "As médias de Goiás e Brasil são praticamente equivalentes."
     )
 
 st.write(
-    f"O desvio padrão em Goiás ({desvio_go:.2f}) e no Brasil ({desvio_br:.2f}) mostra o nível de dispersão das notas."
+    f"O desvio padrão em Goiás ({desvio_go:.2f}) indica o nível de dispersão "
+    f"das notas em relação à média."
 )
+
+st.write("""
+Os histogramas foram normalizados em percentual para permitir comparação
+proporcional entre Goiás e Brasil, evitando distorções causadas pela
+diferença de tamanho das amostras.
+""")

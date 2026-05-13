@@ -1,11 +1,22 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 st.title("🏫 Comparação por Tipo de Escola")
 
-# carregar base
-df = pd.read_csv("dados/tratado/enem_escola_sample.csv")
+# -----------------------------
+# CARREGAMENTO
+# -----------------------------
+df = pd.read_csv(
+    "dados/tratado/enem_escola_sample.csv"
+)
+
+# -----------------------------
+# CLASSIFICAÇÃO GO vs BR
+# -----------------------------
+df["Local"] = df["SG_UF_PROVA"].apply(
+    lambda x: "Goiás" if x == "GO" else "Brasil"
+)
 
 disciplinas = [
     "Linguagens",
@@ -15,69 +26,148 @@ disciplinas = [
     "Redação"
 ]
 
-disciplina = st.selectbox("Disciplina", disciplinas)
+# -----------------------------
+# FILTRO
+# -----------------------------
+disciplina = st.selectbox(
+    "Disciplina",
+    disciplinas
+)
 
-# separar bases
-df_br = df.copy()
-df_go = df[df["SG_UF_PROVA"] == "GO"].copy()
+# -----------------------------
+# MÉDIAS
+# -----------------------------
+media = (
+    df.groupby(
+        ["Local", "Tipo_Escola"]
+    )[disciplina]
+    .mean()
+    .reset_index()
+)
 
-# médias por tipo de escola
-media_br = df_br.groupby("Tipo_Escola")[disciplina].mean()
-media_go = df_go.groupby("Tipo_Escola")[disciplina].mean()
+media[disciplina] = media[
+    disciplina
+].round(2)
 
-# juntar em uma tabela
-comparacao = pd.DataFrame({
-    "Brasil": media_br,
-    "Goiás": media_go
-}).round(2)
+# -----------------------------
+# TABELA
+# -----------------------------
+st.subheader(
+    "📋 Médias por tipo de escola — Goiás vs Brasil"
+)
 
-# ordenar pelos nomes das escolas
-comparacao = comparacao.sort_index()
+st.dataframe(
+    media,
+    use_container_width=True
+)
 
-st.subheader("📊 Médias por tipo de escola — Brasil x Goiás")
-st.dataframe(comparacao.reset_index())
+# -----------------------------
+# GRÁFICO
+# -----------------------------
+fig = px.bar(
+    media,
+    x="Tipo_Escola",
+    y=disciplina,
+    color="Local",
+    barmode="group",
+    title=f"Média das notas em {disciplina} por tipo de escola"
+)
 
-# gráfico de barras agrupadas
-fig, ax = plt.subplots(figsize=(10, 6))
-comparacao.plot(kind="bar", ax=ax)
+fig.update_layout(
+    yaxis_title="Nota média",
+    xaxis_title="Tipo de escola"
+)
 
-ax.set_title(f"Média das notas em {disciplina} por tipo de escola")
-ax.set_ylabel("Nota média")
-ax.set_xlabel("Tipo de escola")
-ax.legend(title="Grupo")
-plt.xticks(rotation=45)
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
-st.pyplot(fig)
+# -----------------------------
+# ANÁLISE GO
+# -----------------------------
+media_go = (
+    media[
+        media["Local"] == "Goiás"
+    ]
+    .set_index("Tipo_Escola")[disciplina]
+)
 
-# interpretação automática
+melhor = media_go.idxmax()
+pior = media_go.idxmin()
+
+# -----------------------------
+# INTERPRETAÇÃO
+# -----------------------------
 st.markdown("### 📌 Interpretação")
 
-for escola in comparacao.index:
-    brasil = comparacao.loc[escola, "Brasil"]
-    goias = comparacao.loc[escola, "Goiás"]
+st.write(
+    f"Em Goiás, o maior desempenho em "
+    f"{disciplina} foi observado nas escolas "
+    f"{melhor}, enquanto o menor desempenho "
+    f"foi identificado nas escolas {pior}."
+)
+
+st.write("""
+Os resultados mostram que o tipo de escola
+possui forte relação com o desempenho dos
+participantes no ENEM.
+""")
+
+# -----------------------------
+# GAP EDUCACIONAL
+# -----------------------------
+if (
+    "Privada" in media_go.index
+    and
+    "Estadual" in media_go.index
+):
+
+    gap_go = (
+        media_go["Privada"]
+        - media_go["Estadual"]
+    )
+
+    st.write(
+        f"Em Goiás, a diferença entre escolas "
+        f"privadas e estaduais foi de "
+        f"{gap_go:.2f} pontos."
+    )
+
+# -----------------------------
+# COMPARAÇÃO GO vs BR
+# -----------------------------
+pivot = media.pivot(
+    index="Tipo_Escola",
+    columns="Local",
+    values=disciplina
+)
+
+for escola in pivot.index:
+
+    goias = pivot.loc[escola, "Goiás"]
+    brasil = pivot.loc[escola, "Brasil"]
+
     diferenca = goias - brasil
 
     st.write(
-        f"No tipo de escola **{escola}**, a média em **{disciplina}** foi "
-        f"**{brasil:.2f}** no Brasil e **{goias:.2f}** em Goiás, "
-        f"com diferença de **{diferenca:.2f}** pontos."
+        f"No tipo de escola {escola}, Goiás apresentou "
+        f"diferença de {diferenca:.2f} pontos em relação "
+        f"à média nacional."
     )
 
-# comparação entre privada e estadual
-if "Privada" in comparacao.index and "Estadual" in comparacao.index:
-    gap_br = comparacao.loc["Privada", "Brasil"] - comparacao.loc["Estadual", "Brasil"]
-    gap_go = comparacao.loc["Privada", "Goiás"] - comparacao.loc["Estadual", "Goiás"]
+# -----------------------------
+# CONCLUSÃO
+# -----------------------------
+st.write("""
+De forma geral, escolas privadas apresentaram
+as maiores médias, enquanto redes públicas
+obtiveram desempenho inferior em praticamente
+todas as disciplinas analisadas.
+""")
 
-    st.write(
-        f"No Brasil, a diferença entre escolas **Privadas** e **Estaduais** é de "
-        f"aproximadamente **{gap_br:.2f} pontos**."
-    )
-
-    st.write(
-        f"Em Goiás, essa diferença é de aproximadamente **{gap_go:.2f} pontos**."
-    )
-
-st.write(
-    "De forma geral, a comparação simultânea entre Brasil e Goiás permite observar "
-    "com mais clareza como o tipo de escola está associado ao desempenho dos alunos."
-)
+st.write("""
+Essa diferença sugere influência de fatores
+estruturais, econômicos e sociais no desempenho
+educacional dos participantes.
+""")

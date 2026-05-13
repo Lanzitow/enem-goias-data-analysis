@@ -7,8 +7,10 @@ st.title("📊 Comparações: Goiás vs Brasil")
 
 df = carregar_microdados()
 
-# 🔥 NOVO
-df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
+# classificação GO vs BR
+df["Local"] = df["UF"].apply(
+    lambda x: "Goiás" if x == "GO" else "Brasil"
+)
 
 disciplinas = [
     "Linguagens",
@@ -18,16 +20,22 @@ disciplinas = [
     "Redação"
 ]
 
-# Mantive sua lógica
+# -----------------------------
+# SEPARAÇÃO DOS DADOS
+# -----------------------------
 df_go = df[df["Local"] == "Goiás"].copy()
 df_br = df[df["Local"] == "Brasil"].copy()
 
-# Montando tabela comparativa
+# -----------------------------
+# TABELA COMPARATIVA
+# -----------------------------
 resultados = []
 
 for disciplina in disciplinas:
+
     media_go = df_go[disciplina].mean()
     media_br = df_br[disciplina].mean()
+
     diferenca = media_go - media_br
     diferenca_pct = (diferenca / media_br) * 100
 
@@ -41,27 +49,40 @@ for disciplina in disciplinas:
 
 comparacao = pd.DataFrame(resultados)
 
-st.subheader("Tabela comparativa")
+# -----------------------------
+# TABELA
+# -----------------------------
+st.subheader("📋 Tabela comparativa")
+
 st.dataframe(
     comparacao.style.format({
         "Média_GO": "{:.2f}",
         "Média_BR": "{:.2f}",
         "Diferença": "{:.2f}",
-        "Diferença_%": "{:.2f}"
+        "Diferença_%": "{:.2f}%"
     }),
     use_container_width=True
 )
 
-# Destaques
-melhor = comparacao.loc[comparacao["Diferença"].idxmax()]
-pior = comparacao.loc[comparacao["Diferença"].idxmin()]
+# -----------------------------
+# DESTAQUES
+# -----------------------------
+melhor = comparacao.loc[
+    comparacao["Diferença"].idxmax()
+]
+
+pior = comparacao.loc[
+    comparacao["Diferença"].idxmin()
+]
 
 col1, col2 = st.columns(2)
+
 col1.metric(
     "Maior vantagem de Goiás",
     melhor["Disciplina"],
     f'{melhor["Diferença"]:.2f} pontos'
 )
+
 col2.metric(
     "Maior desvantagem de Goiás",
     pior["Disciplina"],
@@ -69,63 +90,144 @@ col2.metric(
 )
 
 st.markdown("---")
-st.subheader("Comparação por disciplina")
 
-disciplina_escolhida = st.selectbox("Escolha a disciplina", disciplinas)
+# -----------------------------
+# DISCIPLINA ESPECÍFICA
+# -----------------------------
+st.subheader("📚 Comparação por disciplina")
 
-linha = comparacao[comparacao["Disciplina"] == disciplina_escolhida].iloc[0]
+disciplina_escolhida = st.selectbox(
+    "Escolha a disciplina",
+    disciplinas
+)
 
+linha = comparacao[
+    comparacao["Disciplina"] == disciplina_escolhida
+].iloc[0]
+
+# -----------------------------
+# MÉTRICAS
+# -----------------------------
 c1, c2, c3 = st.columns(3)
-c1.metric("Média Goiás", f'{linha["Média_GO"]:.2f}')
-c2.metric("Média Brasil", f'{linha["Média_BR"]:.2f}')
-c3.metric("Diferença", f'{linha["Diferença"]:.2f}', f'{linha["Diferença_%"]:.2f}%')
 
-# 🔥 GRÁFICO INTERATIVO
+c1.metric(
+    "Média Goiás",
+    f'{linha["Média_GO"]:.2f}'
+)
+
+c2.metric(
+    "Média Brasil",
+    f'{linha["Média_BR"]:.2f}'
+)
+
+c3.metric(
+    "Diferença",
+    f'{linha["Diferença"]:.2f}',
+    f'{linha["Diferença_%"]:.2f}%'
+)
+
+# -----------------------------
+# GRÁFICO INDIVIDUAL
+# -----------------------------
 fig = px.bar(
     x=["Goiás", "Brasil"],
     y=[linha["Média_GO"], linha["Média_BR"]],
-    labels={"x": "Local", "y": "Nota média"},
-    title=f"Comparação das médias - {disciplina_escolhida}"
+    labels={
+        "x": "Local",
+        "y": "Nota média"
+    },
+    title=f"Comparação das médias — {disciplina_escolhida}"
+)
+
+fig.update_layout(
+    yaxis_title="Nota média",
+    xaxis_title=""
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
+# -----------------------------
+# INTERPRETAÇÃO
+# -----------------------------
 st.markdown("### 📌 Interpretação automática")
 
 if linha["Diferença"] > 0:
+
     st.success(
         f"Em {disciplina_escolhida}, Goiás ficou acima da média nacional em "
-        f'{linha["Diferença"]:.2f} pontos ({linha["Diferença_%"]:.2f}%).'
+        f'{linha["Diferença"]:.2f} pontos '
+        f'({linha["Diferença_%"]:.2f}%).'
     )
-else:
+
+elif linha["Diferença"] < 0:
+
     st.warning(
         f"Em {disciplina_escolhida}, Goiás ficou abaixo da média nacional em "
-        f'{abs(linha["Diferença"]):.2f} pontos ({abs(linha["Diferença_%"]):.2f}%).'
+        f'{abs(linha["Diferença"]):.2f} pontos '
+        f'({abs(linha["Diferença_%"]):.2f}%).'
+    )
+
+else:
+
+    st.info(
+        "As médias de Goiás e Brasil são praticamente equivalentes."
     )
 
 st.markdown("---")
-st.subheader("Comparação geral entre todas as disciplinas")
 
-# 🔥 GRÁFICO INTERATIVO GERAL
+# -----------------------------
+# COMPARAÇÃO GERAL
+# -----------------------------
+st.subheader("📊 Comparação geral entre disciplinas")
+
 fig2 = px.bar(
     comparacao,
     x="Disciplina",
     y=["Média_GO", "Média_BR"],
     barmode="group",
-    title="Médias por disciplina: Goiás vs Brasil"
+    title="Médias por disciplina — Goiás vs Brasil"
+)
+
+fig2.update_layout(
+    yaxis_title="Nota média",
+    xaxis_title=""
 )
 
 st.plotly_chart(fig2, use_container_width=True)
 
-st.markdown("### Ranking das disciplinas por diferença")
+# -----------------------------
+# RANKING
+# -----------------------------
+st.subheader("🏆 Ranking das disciplinas por diferença")
 
-ranking = comparacao.sort_values("Diferença", ascending=False).reset_index(drop=True)
+ranking = comparacao.sort_values(
+    "Diferença",
+    ascending=False
+).reset_index(drop=True)
+
 ranking.index = ranking.index + 1
 
 st.dataframe(
-    ranking[["Disciplina", "Diferença", "Diferença_%"]].style.format({
+    ranking[
+        ["Disciplina", "Diferença", "Diferença_%"]
+    ].style.format({
         "Diferença": "{:.2f}",
-        "Diferença_%": "{:.2f}"
+        "Diferença_%": "{:.2f}%"
     }),
     use_container_width=True
 )
+
+st.markdown("---")
+
+# -----------------------------
+# CONCLUSÃO
+# -----------------------------
+st.subheader("📌 Conclusão geral")
+
+st.write("""
+As médias de Goiás apresentam comportamento bastante semelhante ao cenário nacional,
+com pequenas diferenças na maioria das disciplinas.
+
+O maior destaque positivo foi observado em Redação, enquanto as demais áreas apresentaram
+diferenças mais discretas em relação à média brasileira.
+""")

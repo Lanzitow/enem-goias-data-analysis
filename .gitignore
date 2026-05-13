@@ -7,6 +7,3 @@ dados/bruto/
 .DS_Store
 dados/tratado/enem_tratado.csv
 dados/tratado/enem_escola.csv
-dados/
-*.csv
-*.png

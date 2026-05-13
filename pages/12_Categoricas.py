@@ -7,43 +7,81 @@ st.title("📊 Análise de Variáveis Categóricas")
 
 df = carregar_microdados()
 
-# 🔥 já existente
-df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
+# -----------------------------
+# CLASSIFICAÇÃO GO vs BR
+# -----------------------------
+df["Local"] = df["UF"].apply(
+    lambda x: "Goiás" if x == "GO" else "Brasil"
+)
 
-# 🔥 NOVA variável categórica (faixa de nota)
-disciplina = st.selectbox("Escolha a disciplina", [
+disciplinas = [
     "Linguagens",
     "Matemática",
     "Ciências Humanas",
     "Ciências da Natureza",
     "Redação"
-])
+]
 
-# criar faixas
+# -----------------------------
+# FILTRO
+# -----------------------------
+disciplina = st.selectbox(
+    "Escolha a disciplina",
+    disciplinas
+)
+
+# -----------------------------
+# CRIAÇÃO DAS FAIXAS
+# -----------------------------
 df["Faixa"] = pd.cut(
     df[disciplina],
     bins=[0, 400, 600, 800, 1000],
-    labels=["Baixo", "Médio", "Alto", "Muito Alto"]
+    labels=[
+        "Baixo",
+        "Médio",
+        "Alto",
+        "Muito Alto"
+    ]
 )
 
 # remover nulos
 df = df[df["Faixa"].notna()]
 
-# -------------------
-# TABELA
-# -------------------
-st.subheader("Tabela de Contingência (%)")
+# -----------------------------
+# TABELA DE CONTINGÊNCIA
+# -----------------------------
+st.subheader("📋 Tabela de contingência (%)")
 
-tabela = pd.crosstab(df["Local"], df["Faixa"])
-tabela_pct = tabela.div(tabela.sum(axis=1), axis=0) * 100
+tabela = pd.crosstab(
+    df["Local"],
+    df["Faixa"]
+)
 
-st.dataframe(tabela_pct.round(2), use_container_width=True)
+tabela_pct = (
+    tabela.div(
+        tabela.sum(axis=1),
+        axis=0
+    ) * 100
+)
 
-# -------------------
-# GRÁFICO
-# -------------------
-df_plot = df.groupby(["Local", "Faixa"]).size().reset_index(name="qtd")
-df_plot["Percentual"] = df_plot.groupby("Local")["qtd"].transform(lambda x: x / x.sum() * 100)
+st.dataframe(
+    tabela_pct.round(2),
+    use_container_width=True
+)
+
+# -----------------------------
+# GRÁFICO PRINCIPAL
+# -----------------------------
+df_plot = (
+    df.groupby(["Local", "Faixa"])
+    .size()
+    .reset_index(name="Quantidade")
+)
+
+df_plot["Percentual"] = (
+    df_plot.groupby("Local")["Quantidade"]
+    .transform(lambda x: x / x.sum() * 100)
+)
 
 fig = px.bar(
     df_plot,
@@ -51,53 +89,88 @@ fig = px.bar(
     y="Percentual",
     color="Faixa",
     barmode="stack",
-    title="Distribuição percentual das faixas de nota (GO vs Brasil)"
+    title=f"Distribuição percentual das faixas de nota — {disciplina}"
+)
+
+fig.update_layout(
+    yaxis_title="Percentual (%)",
+    xaxis_title=""
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-# -------------------
+# -----------------------------
 # INTERPRETAÇÃO
-# -------------------
+# -----------------------------
 st.markdown("### 📌 Interpretação")
 
-st.write(
-    "A análise relaciona duas variáveis categóricas: localização (Goiás/Brasil) e faixa de desempenho. "
-    "Isso permite identificar diferenças na distribuição de desempenho entre os grupos."
-)
+st.write("""
+A análise relaciona duas variáveis categóricas:
+o local (Goiás ou Brasil) e a faixa de desempenho dos participantes.
+""")
+
+st.write("""
+As faixas foram divididas em:
+- Baixo: até 400 pontos
+- Médio: entre 400 e 600
+- Alto: entre 600 e 800
+- Muito Alto: acima de 800 pontos
+""")
+
+st.write("""
+Essa categorização permite identificar diferenças na distribuição
+de desempenho entre Goiás e o cenário nacional.
+""")
 
 st.markdown("---")
-st.subheader("📊 Comparação de Faixas por Disciplina (GO vs Brasil)")
+
+# -----------------------------
+# COMPARAÇÃO POR DISCIPLINA
+# -----------------------------
+st.subheader("📊 Comparação de faixas por disciplina")
 
 df_melt = df.melt(
     id_vars=["Local"],
-    value_vars=[
-        "Linguagens",
-        "Matemática",
-        "Ciências Humanas",
-        "Ciências da Natureza",
-        "Redação"
-    ],
+    value_vars=disciplinas,
     var_name="Disciplina",
     value_name="Nota"
 )
 
-# criar faixa categórica
+# criação das faixas
 df_melt["Faixa"] = pd.cut(
     df_melt["Nota"],
     bins=[0, 400, 600, 800, 1000],
-    labels=["Baixo", "Médio", "Alto", "Muito Alto"]
+    labels=[
+        "Baixo",
+        "Médio",
+        "Alto",
+        "Muito Alto"
+    ]
 )
 
-df_melt = df_melt[df_melt["Faixa"].notna()]
+df_melt = df_melt[
+    df_melt["Faixa"].notna()
+]
 
-# agrupar com LOCAL
-df_plot2 = df_melt.groupby(["Local", "Disciplina", "Faixa"]).size().reset_index(name="qtd")
+# agrupamento
+df_plot2 = (
+    df_melt.groupby(
+        ["Local", "Disciplina", "Faixa"]
+    )
+    .size()
+    .reset_index(name="Quantidade")
+)
 
-df_plot2["Percentual"] = df_plot2.groupby(["Local", "Disciplina"])["qtd"] \
+df_plot2["Percentual"] = (
+    df_plot2.groupby(
+        ["Local", "Disciplina"]
+    )["Quantidade"]
     .transform(lambda x: x / x.sum() * 100)
+)
 
-# 🔥 gráfico correto (com GO vs BR)
+# -----------------------------
+# GRÁFICO GERAL
+# -----------------------------
 fig2 = px.bar(
     df_plot2,
     x="Disciplina",
@@ -105,15 +178,33 @@ fig2 = px.bar(
     color="Faixa",
     barmode="stack",
     facet_col="Local",
-    title="Distribuição de desempenho por disciplina (GO vs Brasil)"
+    title="Distribuição percentual das faixas de desempenho"
+)
+
+fig2.update_layout(
+    yaxis_title="Percentual (%)",
+    xaxis_title=""
 )
 
 st.plotly_chart(fig2, use_container_width=True)
 
+# -----------------------------
+# INTERPRETAÇÃO FINAL
+# -----------------------------
 st.markdown("### 📌 Interpretação adicional")
 
-st.write(
-    "A análise permite comparar a distribuição de desempenho entre Goiás e o Brasil em cada disciplina. "
-    "Observa-se como as faixas de nota se distribuem dentro de cada grupo, evidenciando possíveis diferenças "
-    "entre o desempenho estadual e nacional."
-)
+st.write("""
+A distribuição percentual permite comparar como os participantes
+de Goiás e do Brasil se concentram nas diferentes faixas de desempenho.
+""")
+
+st.write("""
+As disciplinas apresentam padrões distintos de distribuição,
+permitindo identificar áreas com maior concentração de notas baixas
+ou maiores proporções de desempenho elevado.
+""")
+
+st.write("""
+Essa abordagem é útil para análises categóricas e estudos de associação
+entre grupos e níveis de desempenho educacional.
+""")

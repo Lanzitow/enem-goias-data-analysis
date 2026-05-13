@@ -1,10 +1,18 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from utils.load_data import carregar_microdados
 
 st.title("📌 Conclusões da Análise")
 
 df = carregar_microdados()
+
+# -----------------------------
+# CLASSIFICAÇÃO GO vs BR
+# -----------------------------
+df["Local"] = df["UF"].apply(
+    lambda x: "Goiás" if x == "GO" else "Brasil"
+)
 
 disciplinas = [
     "Linguagens",
@@ -14,103 +22,224 @@ disciplinas = [
     "Redação"
 ]
 
-df_go = df[df["UF"] == "GO"].copy()
+df_go = df[df["Local"] == "Goiás"]
+df_br = df[df["Local"] == "Brasil"]
 
-# calcular diferenças entre GO e BR
+# -----------------------------
+# COMPARAÇÃO
+# -----------------------------
 resultados = []
 
 for d in disciplinas:
+
     media_go = df_go[d].mean()
-    media_br = df[d].mean()
+    media_br = df_br[d].mean()
+
     diff = media_go - media_br
+    diff_pct = (diff / media_br) * 100
 
-    resultados.append((d, media_go, media_br, diff))
+    resultados.append({
+        "Disciplina": d,
+        "Média GO": round(media_go, 2),
+        "Média BR": round(media_br, 2),
+        "Diferença": round(diff, 2),
+        "Diferença %": round(diff_pct, 2)
+    })
 
-df_res = pd.DataFrame(resultados, columns=["Disciplina", "GO", "BR", "Diferença"])
+df_res = pd.DataFrame(resultados)
 
-melhor = df_res.loc[df_res["Diferença"].idxmax()]
-pior = df_res.loc[df_res["Diferença"].idxmin()]
+melhor = df_res.loc[
+    df_res["Diferença"].idxmax()
+]
 
-st.subheader("📊 Síntese dos principais resultados")
+pior = df_res.loc[
+    df_res["Diferença"].idxmin()
+]
+
+# -----------------------------
+# TABELA FINAL
+# -----------------------------
+st.subheader("📊 Comparação final das médias")
+
+st.dataframe(
+    df_res,
+    use_container_width=True
+)
+
+# -----------------------------
+# GRÁFICO
+# -----------------------------
+fig = px.bar(
+    df_res,
+    x="Disciplina",
+    y=["Média GO", "Média BR"],
+    barmode="group",
+    title="Comparação final — Goiás vs Brasil"
+)
+
+fig.update_layout(
+    yaxis_title="Nota média",
+    xaxis_title=""
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# -----------------------------
+# PRINCIPAIS RESULTADOS
+# -----------------------------
+st.markdown("---")
+
+st.subheader("📌 Síntese dos principais resultados")
 
 st.write(
-    f"A comparação entre Goiás e Brasil mostrou que o melhor desempenho relativo de Goiás ocorreu em "
-    f"**{melhor['Disciplina']}**, com vantagem de **{melhor['Diferença']:.2f} pontos** em relação à média nacional."
+    f"O melhor desempenho relativo de Goiás ocorreu em "
+    f"{melhor['Disciplina']}, com vantagem de "
+    f"{melhor['Diferença']:.2f} pontos em relação ao Brasil."
 )
 
 st.write(
-    f"Por outro lado, a maior desvantagem de Goiás foi observada em **{pior['Disciplina']}**, "
-    f"com diferença de **{abs(pior['Diferença']):.2f} pontos** em relação ao Brasil."
+    f"A maior desvantagem foi observada em "
+    f"{pior['Disciplina']}, com diferença de "
+    f"{abs(pior['Diferença']):.2f} pontos."
 )
 
+# -----------------------------
+# INTERPRETAÇÃO
+# -----------------------------
 st.markdown("---")
 
 st.subheader("📐 Interpretação estatística")
 
 st.write("""
-A análise das medidas descritivas permitiu verificar que Goiás e Brasil apresentam comportamentos
-estatísticos bastante próximos na maior parte das disciplinas avaliadas. De modo geral, as médias
-e medianas mantiveram valores semelhantes, indicando um padrão relativamente alinhado entre o estado
-e o cenário nacional.
-
-Além disso, os desvios padrão mostraram que há dispersão considerável nas notas, especialmente em
-Matemática e Redação. Esse resultado evidencia heterogeneidade no desempenho dos participantes,
-ou seja, há diferenças expressivas entre alunos com notas mais baixas e mais altas.
+As análises estatísticas mostraram que Goiás e Brasil possuem
+comportamentos bastante semelhantes na maior parte das disciplinas.
 """)
 
+st.write("""
+As médias e medianas apresentaram valores próximos,
+indicando alinhamento entre o desempenho estadual e nacional.
+""")
+
+st.write("""
+Os desvios padrão evidenciaram dispersão significativa das notas,
+principalmente em Matemática e Redação, indicando heterogeneidade
+entre os participantes.
+""")
+
+# -----------------------------
+# DISTRIBUIÇÃO
+# -----------------------------
 st.markdown("---")
 
 st.subheader("📊 Distribuição das notas")
 
 st.write("""
-A análise das distribuições, por meio de histogramas e boxplots, mostrou que Goiás e Brasil possuem
-formatos semelhantes de concentração de notas. Em geral, as maiores frequências concentram-se em faixas
-intermediárias, enquanto valores extremos aparecem em menor proporção.
-
-Esse comportamento reforça a ideia de que o desempenho dos estudantes goianos acompanha a tendência
-nacional, sem apresentar rupturas muito acentuadas em relação ao padrão observado no Brasil.
+Os histogramas e boxplots mostraram concentração das notas
+em faixas intermediárias, com presença de valores extremos
+em menor proporção.
 """)
 
+st.write("""
+As distribuições observadas em Goiás acompanharam o padrão
+geral identificado no Brasil.
+""")
+
+# -----------------------------
+# COMPARAÇÃO
+# -----------------------------
 st.markdown("---")
 
 st.subheader("📈 Comparação entre Goiás e Brasil")
 
 st.write("""
-A comparação direta das médias por disciplina mostrou que Goiás apresenta desempenho muito próximo
-ao Brasil na maior parte das áreas do conhecimento. As diferenças observadas são, em geral, pequenas,
-o que indica forte semelhança entre os dois contextos analisados.
-
-O principal destaque positivo de Goiás encontra-se em Redação, disciplina em que o estado supera
-de forma mais expressiva a média nacional. Nas demais áreas, as variações são menores, com diferenças
-positivas e negativas de baixa magnitude.
+As diferenças entre Goiás e Brasil foram relativamente pequenas
+na maioria das disciplinas analisadas.
 """)
-
-st.markdown("---")
-
-st.subheader("🏫 Tipo de escola e desigualdades educacionais")
 
 st.write("""
-As análises por tipo de escola evidenciaram diferenças importantes no desempenho dos estudantes.
-De forma geral, escolas privadas apresentaram médias superiores às redes públicas, tanto em Goiás
-quanto no Brasil. Esse resultado sugere a presença de desigualdades estruturais no acesso a melhores
-condições de aprendizagem e desempenho acadêmico.
-
-Assim, o tipo de escola mostrou-se um fator relevante para compreender parte da variação observada
-nas notas do ENEM.
+O principal destaque positivo de Goiás ocorreu em Redação,
+disciplina em que o estado apresentou desempenho superior
+à média nacional.
 """)
 
+# -----------------------------
+# ESCOLAS
+# -----------------------------
+st.markdown("---")
+
+st.subheader("🏫 Tipo de escola e desigualdade")
+
+st.write("""
+As análises mostraram diferenças importantes entre os tipos
+de escola.
+""")
+
+st.write("""
+Escolas privadas apresentaram desempenho superior em relação
+às redes públicas, tanto em Goiás quanto no Brasil.
+""")
+
+st.write("""
+Esse resultado sugere influência de fatores estruturais,
+econômicos e educacionais no desempenho dos participantes.
+""")
+
+# -----------------------------
+# NOTAS ZERADAS
+# -----------------------------
+st.markdown("---")
+
+st.subheader("🚫 Notas zeradas")
+
+st.write("""
+As notas zeradas foram mantidas na análise por representarem
+desempenho real dos participantes.
+""")
+
+st.write("""
+Os resultados mostraram maior concentração de notas zeradas
+em algumas disciplinas específicas, evidenciando possíveis
+dificuldades de aprendizagem.
+""")
+
+# -----------------------------
+# ALUNOS EM RISCO
+# -----------------------------
+st.markdown("---")
+
+st.subheader("⚠️ Alunos em risco")
+
+st.write("""
+A análise de alunos com notas abaixo de 400 pontos permitiu
+identificar grupos com maior vulnerabilidade acadêmica.
+""")
+
+st.write("""
+Esse indicador pode auxiliar na identificação de áreas
+que demandam maior atenção educacional.
+""")
+
+# -----------------------------
+# CONSIDERAÇÕES FINAIS
+# -----------------------------
 st.markdown("---")
 
 st.subheader("🎯 Considerações finais")
 
 st.write("""
-Conclui-se que o desempenho dos estudantes de Goiás no ENEM 2024 apresenta forte proximidade com
-o padrão nacional, com pequenas diferenças entre as disciplinas analisadas. Embora Goiás tenha se
-destacado positivamente em algumas áreas, especialmente em Redação, o comportamento geral permanece
-alinhado ao contexto brasileiro.
+Conclui-se que o desempenho de Goiás no ENEM 2024 apresentou
+forte proximidade com o cenário nacional.
+""")
 
-O estudo também demonstrou que a análise estatística é fundamental para compreender o desempenho
-educacional de forma mais ampla, permitindo identificar padrões, níveis de dispersão, desigualdades
-e possíveis pontos de atenção. Dessa forma, os resultados obtidos contribuem para uma leitura mais
-consistente da realidade educacional, tanto em Goiás quanto no Brasil.
+st.write("""
+Apesar das diferenças observadas em algumas disciplinas,
+o comportamento estatístico geral permaneceu semelhante
+entre Goiás e Brasil.
+""")
+
+st.write("""
+O estudo demonstrou a importância da análise estatística
+na compreensão do desempenho educacional, permitindo
+identificar padrões, desigualdades e possíveis desafios
+do sistema de ensino.
 """)

@@ -6,8 +6,12 @@ st.title("❓ Questões de Pesquisa")
 
 df = carregar_microdados()
 
-# 🔥 NOVO PADRÃO
-df["Local"] = df["UF"].apply(lambda x: "Goiás" if x == "GO" else "Brasil")
+# -----------------------------
+# CLASSIFICAÇÃO GO vs BR
+# -----------------------------
+df["Local"] = df["UF"].apply(
+    lambda x: "Goiás" if x == "GO" else "Brasil"
+)
 
 disciplinas = [
     "Linguagens",
@@ -20,10 +24,9 @@ disciplinas = [
 df_go = df[df["Local"] == "Goiás"]
 df_br = df[df["Local"] == "Brasil"]
 
-# -------------------------------
-# FUNÇÕES COM CACHE
-# -------------------------------
-
+# -----------------------------
+# FUNÇÕES
+# -----------------------------
 @st.cache_data
 def calcular_medias(df_base):
     return df_base[disciplinas].mean()
@@ -46,10 +49,14 @@ def calcular_zeros(df_base):
 
 @st.cache_data
 def comparar_go_br(df_go, df_br):
+
     resultados = []
+
     for d in disciplinas:
+
         media_go = df_go[d].mean()
         media_br = df_br[d].mean()
+
         diff = media_go - media_br
         diff_pct = (diff / media_br) * 100
 
@@ -60,12 +67,12 @@ def comparar_go_br(df_go, df_br):
             "Diferença": round(diff, 2),
             "Diferença_%": round(diff_pct, 2)
         })
+
     return pd.DataFrame(resultados)
 
-# -------------------------------
-# PRÉ-CÁLCULO
-# -------------------------------
-
+# -----------------------------
+# PRÉ-CÁLCULOS
+# -----------------------------
 medias_go = calcular_medias(df_go)
 medias_br = calcular_medias(df_br)
 
@@ -83,70 +90,162 @@ zeros_br = calcular_zeros(df_br)
 
 comp = comparar_go_br(df_go, df_br)
 
-# -------------------------------
+# -----------------------------
 # QUESTÕES
-# -------------------------------
+# -----------------------------
 
-with st.expander("Questão 1 — Média em Goiás"):
+with st.expander("Questão 1 — Quais são as médias das disciplinas em Goiás?"):
+
     st.dataframe(medias_go.round(2))
-    st.write("Redação apresenta maior média, enquanto Natureza tem menor desempenho.")
 
-with st.expander("Questão 2 — Média no Brasil"):
+    st.write("""
+    Em Goiás, a maior média foi observada em Redação,
+    enquanto Ciências da Natureza apresentou os menores valores médios.
+    """)
+
+# --------------------------------
+
+with st.expander("Questão 2 — Quais são as médias das disciplinas no Brasil?"):
+
     st.dataframe(medias_br.round(2))
-    st.write("O padrão nacional segue tendência semelhante ao estado de Goiás.")
 
-with st.expander("Questão 3 — Desvio padrão em Goiás"):
+    st.write("""
+    O comportamento das médias nacionais é semelhante ao observado em Goiás,
+    com destaque para Redação.
+    """)
+
+# --------------------------------
+
+with st.expander("Questão 3 — Qual o desvio padrão das notas em Goiás?"):
+
     st.dataframe(desvio_go.round(2))
-    st.write("Maior desvio indica maior desigualdade de desempenho entre alunos.")
 
-with st.expander("Questão 4 — Desvio padrão no Brasil"):
+    st.write("""
+    O desvio padrão mede a dispersão das notas.
+    Valores mais altos indicam maior desigualdade de desempenho entre os participantes.
+    """)
+
+# --------------------------------
+
+with st.expander("Questão 4 — Qual o desvio padrão das notas no Brasil?"):
+
     st.dataframe(desvio_br.round(2))
 
-with st.expander("Questão 5 — Média vs Mediana (GO)"):
-    st.dataframe(diff_go.round(2))
-    st.write("Diferenças indicam assimetria na distribuição.")
+# --------------------------------
 
-with st.expander("Questão 6 — Média vs Mediana (BR)"):
+with st.expander("Questão 5 — Existe diferença entre média e mediana em Goiás?"):
+
+    st.dataframe(diff_go.round(2))
+
+    st.write("""
+    Diferenças entre média e mediana podem indicar assimetria
+    na distribuição das notas.
+    """)
+
+# --------------------------------
+
+with st.expander("Questão 6 — Existe diferença entre média e mediana no Brasil?"):
+
     st.dataframe(diff_br.round(2))
 
-with st.expander("Questão 7 — Melhor disciplina GO"):
-    st.write(medias_go.idxmax())
+# --------------------------------
 
-with st.expander("Questão 8 — Pior disciplina GO"):
-    st.write(medias_go.idxmin())
+with st.expander("Questão 7 — Qual a melhor disciplina em Goiás?"):
 
-with st.expander("Questão 9 — Melhor disciplina BR"):
-    st.write(medias_br.idxmax())
+    st.write(f"Disciplina com maior média: {medias_go.idxmax()}")
 
-with st.expander("Questão 10 — Pior disciplina BR"):
-    st.write(medias_br.idxmin())
+# --------------------------------
 
-with st.expander("Questão 11 — Comparação GO vs BR"):
+with st.expander("Questão 8 — Qual a pior disciplina em Goiás?"):
+
+    st.write(f"Disciplina com menor média: {medias_go.idxmin()}")
+
+# --------------------------------
+
+with st.expander("Questão 9 — Qual a melhor disciplina no Brasil?"):
+
+    st.write(f"Disciplina com maior média: {medias_br.idxmax()}")
+
+# --------------------------------
+
+with st.expander("Questão 10 — Qual a pior disciplina no Brasil?"):
+
+    st.write(f"Disciplina com menor média: {medias_br.idxmin()}")
+
+# --------------------------------
+
+with st.expander("Questão 11 — Como Goiás se compara ao Brasil?"):
+
     st.dataframe(comp)
 
-with st.expander("Questão 12 — Maior vantagem GO"):
-    st.write(comp.loc[comp["Diferença"].idxmax()])
+    st.write("""
+    Goiás apresenta comportamento estatístico bastante semelhante
+    ao cenário nacional, com pequenas diferenças entre as disciplinas.
+    """)
 
-with st.expander("Questão 13 — Maior desvantagem GO"):
-    st.write(comp.loc[comp["Diferença"].idxmin()])
+# --------------------------------
 
-with st.expander("Questão 14 — Zeros em GO"):
+with st.expander("Questão 12 — Qual a maior vantagem de Goiás?"):
+
+    st.dataframe(
+        comp.loc[[comp["Diferença"].idxmax()]]
+    )
+
+# --------------------------------
+
+with st.expander("Questão 13 — Qual a maior desvantagem de Goiás?"):
+
+    st.dataframe(
+        comp.loc[[comp["Diferença"].idxmin()]]
+    )
+
+# --------------------------------
+
+with st.expander("Questão 14 — Qual o percentual de notas zeradas em Goiás?"):
+
     st.dataframe(zeros_go.round(2))
 
-with st.expander("Questão 15 — Zeros no Brasil"):
+# --------------------------------
+
+with st.expander("Questão 15 — Qual o percentual de notas zeradas no Brasil?"):
+
     st.dataframe(zeros_br.round(2))
 
-with st.expander("Questão 16 — Mediana GO"):
+# --------------------------------
+
+with st.expander("Questão 16 — Qual a mediana das notas em Goiás?"):
+
     st.dataframe(mediana_go.round(2))
 
-with st.expander("Questão 17 — Mediana BR"):
+# --------------------------------
+
+with st.expander("Questão 17 — Qual a mediana das notas no Brasil?"):
+
     st.dataframe(mediana_br.round(2))
 
-with st.expander("Questão 18 — Interpretação geral"):
-    st.write("GO e BR possuem comportamento estatístico semelhante.")
+# --------------------------------
 
-with st.expander("Questão 19 — Escola GO"):
-    st.write("Escolas privadas apresentam melhores resultados.")
+with st.expander("Questão 18 — Qual a interpretação geral dos resultados?"):
 
-with st.expander("Questão 20 — Escola BR"):
-    st.write("Diferenças estruturais entre redes são evidentes.")
+    st.write("""
+    Goiás e Brasil apresentam distribuições e médias bastante semelhantes,
+    indicando comportamento estatístico próximo entre os grupos analisados.
+    """)
+
+# --------------------------------
+
+with st.expander("Questão 19 — Como o tipo de escola influencia Goiás?"):
+
+    st.write("""
+    Em Goiás, escolas privadas apresentaram médias superiores
+    em praticamente todas as disciplinas analisadas.
+    """)
+
+# --------------------------------
+
+with st.expander("Questão 20 — Como o tipo de escola influencia o Brasil?"):
+
+    st.write("""
+    No Brasil, também foi observada diferença significativa entre os tipos de escola,
+    evidenciando desigualdades estruturais no desempenho educacional.
+    """)

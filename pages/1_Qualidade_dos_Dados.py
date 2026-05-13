@@ -7,25 +7,22 @@ st.title("📊 Qualidade dos Dados")
 # -----------------------------
 # NÚMEROS OFICIAIS DO PROCESSO
 # -----------------------------
-base_resultados_original = 4_332_944
-base_participantes_original = 4_332_944
+base_original = 4_332_944
+base_final_limpa = 2_990_093
 
-base_inicial_analise = 4_332_944
-duplicados_removidos = 1_151_156
-base_apos_duplicados = 3_181_788
-base_final_limpa = 2_990_085
+removidos_total = base_original - base_final_limpa
 
 nulos_antes = {
-    "SG_UF_PROVA": 0,
-    "Linguagens": 14_842,
-    "Matemática": 176_888,
-    "Ciências Humanas": 14_842,
-    "Ciências da Natureza": 176_888,
-    "Redação": 14_842
+    "UF": 0,
+    "Linguagens": 1_164_989,
+    "Matemática": 1_327_963,
+    "Ciências Humanas": 1_164_989,
+    "Ciências da Natureza": 1_327_963,
+    "Redação": 1_164_989
 }
 
 nulos_depois = {
-    "SG_UF_PROVA": 0,
+    "UF": 0,
     "Linguagens": 0,
     "Matemática": 0,
     "Ciências Humanas": 0,
@@ -38,43 +35,53 @@ nulos_depois = {
 # -----------------------------
 st.subheader("📌 Tamanho das bases")
 
-c1, c2, c3 = st.columns(3)
-c1.metric("RESULTADOS_2024 original", f"{base_resultados_original:,}".replace(",", "."))
-c2.metric("Base inicial da análise", f"{base_inicial_analise:,}".replace(",", "."))
-c3.metric("Base final limpa", f"{base_final_limpa:,}".replace(",", "."))
+c1, c2 = st.columns(2)
 
-removidos_total = base_inicial_analise - base_final_limpa
-st.write(f"Total de registros removidos no processo de limpeza: **{removidos_total:,}**".replace(",", "."))
+c1.metric(
+    "Base original",
+    f"{base_original:,}".replace(",", ".")
+)
+
+c2.metric(
+    "Base final limpa",
+    f"{base_final_limpa:,}".replace(",", ".")
+)
+
+st.write(
+    f"Total de registros removidos por valores ausentes (NaN): "
+    f"**{removidos_total:,}**".replace(",", ".")
+)
 
 st.markdown("---")
 
 # -----------------------------
 # FLUXO DA LIMPEZA
 # -----------------------------
-st.subheader("🧹 Etapas do tratamento dos dados")
+st.subheader("🧹 Processo de tratamento dos dados")
 
 etapas = pd.DataFrame({
     "Etapa": [
-        "Base inicial da análise",
-        "Após remoção de duplicados",
+        "Base original",
         "Após remoção de valores ausentes (NaN)"
     ],
     "Quantidade": [
-        base_inicial_analise,
-        base_apos_duplicados,
+        base_original,
         base_final_limpa
     ]
 })
 
 st.dataframe(etapas, use_container_width=True)
 
-# 🔥 GRÁFICO INTERATIVO
+# gráfico
 fig = px.bar(
     etapas,
     x="Etapa",
     y="Quantidade",
-    title="Evolução da quantidade de registros"
+    text="Quantidade",
+    title="Quantidade de registros após o tratamento"
 )
+
+fig.update_traces(texttemplate='%{text:,}', textposition='outside')
 
 st.plotly_chart(fig, use_container_width=True)
 
@@ -85,12 +92,13 @@ st.markdown("---")
 # -----------------------------
 st.subheader("🔁 Registros duplicados")
 
-st.metric("Duplicados identificados e removidos", f"{duplicados_removidos:,}".replace(",", "."))
+st.write("""
+Nenhum registro foi removido por duplicidade.
 
-st.write(
-    "A remoção de duplicados foi necessária para evitar super-representação de registros "
-    "iguais nas análises estatísticas."
-)
+Participantes diferentes podem possuir exatamente as mesmas notas
+e características analisadas. Portanto, os registros foram mantidos
+para preservar a distribuição real dos dados.
+""")
 
 st.markdown("---")
 
@@ -100,17 +108,20 @@ st.markdown("---")
 st.subheader("❌ Valores ausentes (NaN)")
 
 df_nulos = pd.DataFrame({
-    "Disciplina/Variável": list(nulos_antes.keys()),
+    "Variável": list(nulos_antes.keys()),
     "Antes da limpeza": list(nulos_antes.values()),
-    "Após a limpeza": list(nulos_depois.values())
+    "Após limpeza": list(nulos_depois.values())
 })
 
 st.dataframe(df_nulos, use_container_width=True)
 
-st.write(
-    "Os valores ausentes foram removidos para garantir consistência nas medidas descritivas, "
-    "nas distribuições e nas comparações entre Goiás e Brasil."
-)
+st.write("""
+Os valores ausentes (NaN) representam participantes sem nota válida
+em uma ou mais áreas do ENEM.
+
+Esses registros foram removidos para garantir consistência estatística
+nas análises descritivas, distribuições e comparações entre Goiás e Brasil.
+""")
 
 st.markdown("---")
 
@@ -119,22 +130,19 @@ st.markdown("---")
 # -----------------------------
 st.subheader("🚫 Notas zeradas")
 
-st.write(
-    "As notas zeradas **não foram removidas** na limpeza. "
-    "Isso porque zero representa desempenho real do participante, e não valor ausente."
-)
+st.write("""
+As notas zeradas não foram removidas da análise.
 
-st.write(
-    "Em outras palavras: o processo removeu valores faltantes (NaN) e duplicados, "
-    "mas preservou registros com nota 0 para manter a fidelidade da análise."
-)
+Nota 0 representa desempenho real do participante, enquanto valores NaN
+representam ausência de informação.
+""")
 
 st.markdown("---")
 
 # -----------------------------
-# COLUNAS UTILIZADAS
+# VARIÁVEIS UTILIZADAS
 # -----------------------------
-st.subheader("🧾 Variáveis utilizadas na análise")
+st.subheader("🧾 Variáveis utilizadas")
 
 colunas = pd.DataFrame({
     "Coluna original": [
@@ -145,7 +153,7 @@ colunas = pd.DataFrame({
         "NU_NOTA_CN",
         "NU_NOTA_REDACAO"
     ],
-    "Nome utilizado no projeto": [
+    "Nome utilizado": [
         "UF",
         "Linguagens",
         "Matemática",
@@ -162,15 +170,15 @@ st.markdown("---")
 # -----------------------------
 # IMPACTO DA LIMPEZA
 # -----------------------------
-st.subheader("📈 Impacto da limpeza")
+st.subheader("📈 Impacto do tratamento dos dados")
 
-st.write(
-    "A etapa de tratamento dos dados foi fundamental para garantir confiabilidade aos resultados. "
-    "Foram removidos registros duplicados e observações com valores ausentes, enquanto as notas zeradas "
-    "foram mantidas por representarem desempenho efetivo dos participantes."
-)
+st.write("""
+O tratamento dos dados foi essencial para garantir maior confiabilidade
+às análises estatísticas realizadas no projeto.
 
-st.write(
-    "Com isso, a base final utilizada nas análises ficou mais consistente e adequada para comparação "
-    "estatística entre Goiás e Brasil."
-)
+A limpeza consistiu na remoção apenas de registros com valores ausentes (NaN),
+mantendo registros válidos mesmo quando participantes possuíam notas iguais.
+
+Com isso, a base final preserva de forma mais fiel a distribuição real
+do desempenho dos participantes do ENEM 2024.
+""")
