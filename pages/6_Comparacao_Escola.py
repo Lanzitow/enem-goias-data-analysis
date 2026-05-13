@@ -7,7 +7,7 @@ st.title("🏫 Comparação por Tipo de Escola")
 # -----------------------------
 # CARREGAMENTO
 # -----------------------------
-df = pd.read_csv("dados/tratado/enem_escola_sample.csv")
+df = pd.read_csv("dados/tratado/enem_escola.csv")
 
 # classificação GO vs BR
 df["Local"] = df["SG_UF_PROVA"].apply(
